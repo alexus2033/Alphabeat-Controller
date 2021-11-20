@@ -5,13 +5,16 @@
  * Author: Alexus2033
  */ 
 
+#include <Arduino.h>
 #include "MIDIUSB.h"   // Arduino Pro Micro only(!)
 #include <Encoder.h>   // http://www.pjrc.com/teensy/td_libs_Encoder.html
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include "Adafruit_LEDBackpack.h"  // HT16K33 with 16-segment display
 #include "timer.h"          // https://github.com/brunocalou/Timer   
+#include <Ewma.h>           // https://github.com/jonnieZG/EWMA
 
+Ewma adcFilter[2] = { (0.11),(0.11) }; 
 Adafruit_AlphaNum4 disp[2] = { Adafruit_AlphaNum4(), Adafruit_AlphaNum4()};
 Encoder rotaryEnc(14, 15);
 long encoderPos  = -999;
@@ -31,6 +34,7 @@ long encoderPos  = -999;
 // Configuration-Data
 #define led1 4
 #define led2 5
+
 int buttonPin[3] = { 10, 9, 8 };
 byte buttonValueOld[3] = { false, false, false }; 
 byte midiMessage[3] = { 55, 49, 48 };
@@ -123,6 +127,20 @@ void checkButton(byte ID){
 
 void loop() {
 
+  //read encoder
+  long newPos = rotaryEnc.read()/4;
+  byte diff = newPos - encoderPos; 
+  if(diff > 0){
+      controlChange(0, 46, 128-diff);
+      debugln(encoderPos);
+      MidiUSB.flush();
+  } else if (diff < 0){
+      controlChange(0, 46, diff);
+      debugln(encoderPos);
+      MidiUSB.flush();
+  }
+  encoderPos = newPos;
+
   midiEventPacket_t rx;
   rx = MidiUSB.read();
     if (rx.header != 0) {
@@ -183,55 +201,14 @@ void loop() {
   readTimer.update();
 }
 
-//read Buttons, Encoder and Pots every 20ms
+//do this every 20ms
 void readInputs(){
   checkButton(0);
   checkButton(1);
   checkButton(2);
 
-//encoder
-  long newPos = rotaryEnc.read()/4;
-  if(newPos - encoderPos > 0){
-      controlChange(0, 46, 127);
-      debugln(encoderPos);
-      MidiUSB.flush();
-  } else if (newPos -encoderPos < 0){
-      controlChange(0, 46, 1);
-      debugln(encoderPos);
-      MidiUSB.flush();
-  }
-  encoderPos = newPos;
-  
-//potentiometers
-  int pot1 = analogRead(analogPotPin[0]);
-  int analogpotNew = analogRead(analogPotPin[0]);
-
-  if (analogpotNew - analogpotOld[0] >= sens || analogpotOld[0] - analogpotNew >= sens) {
-    analogpotOld[0] = analogpotNew;
-    analogpotNew = (map(analogpotNew, 0, 1023, 0, 127));
-    analogpotNew = (constrain(analogpotNew, 0, 127));
-    controlChange(0, 54, analogpotNew); // Set the value of controller 10 on channel 0 to new value
-    debug("pot1: ");
-    debugln(pot1);
-    debug("potread: ");
-    debugln(analogpotNew); 
-    MidiUSB.flush();
-  }
-
-  int pot2 = analogRead(analogPotPin[1]);
-  analogpotNew = analogRead(analogPotPin[1]);
-
-  if (analogpotNew - analogpotOld[1] >= sens || analogpotOld[1] - analogpotNew >= sens) {
-    analogpotOld[1] = analogpotNew;
-    analogpotNew = (map(analogpotNew, 0, 1023, 0, 127));
-    analogpotNew = (constrain(analogpotNew, 0, 127));
-    controlChange(0, 55, analogpotNew); // Set the value of controller 10 on channel 0 to new value
-    debug("pot2: ");
-    debugln(pot2);
-    debug("potread: ");
-    debugln(analogpotNew); 
-    MidiUSB.flush();
-  }
+  readPoti(0,54);
+  readPoti(1,55);
 }
 
 void handleDisplay(byte displayNr, byte byte2, byte byte3){
@@ -254,18 +231,19 @@ void handleDisplay(byte displayNr, byte byte2, byte byte3){
 void readPoti(byte potNr, int analogpotCC){
   
   int pot = analogRead(analogPotPin[potNr]);
-  analogpotNew[potNr] = analogRead(analogPotPin[potNr]);
-
-  if (analogpotNew[potNr] - analogpotOld[potNr] >= 20 || analogpotOld[potNr] - analogpotNew[potNr] >= 20) {
-    analogpotOld[potNr] = analogpotNew[potNr];
-    analogpotNew[potNr] = (map(analogpotNew[potNr], 0, 1023, 0, 127));
-    analogpotNew[potNr] = (constrain(analogpotNew[potNr], 0, 127));
-    controlChange(0, analogpotCC, analogpotNew[potNr]); // Set the value of controller 10 on channel 0 to new value
-    debug("pot: ");
-    debugln(potNr);
-    debug("potread: ");
-    debugln(analogpotNew[potNr]); 
+  int analogpotNew = adcFilter[potNr].filter(pot);
+    
+  if (analogpotNew - analogpotOld[potNr] > 5 || analogpotOld[potNr] - analogpotNew > 5) {
+    analogpotOld[potNr] = analogpotNew;
+    analogpotNew = (map(analogpotNew, 0, 1023, 0, 127));
+    analogpotNew = (constrain(analogpotNew, 0, 127));
+    pot = (map(pot, 0, 1023, 0, 127));
+    controlChange(0, analogpotCC, analogpotNew); // Set the value of controller 10 on channel 0 to new value
     MidiUSB.flush();
+    debug("pot1filter: ");
+    debugln(analogpotNew);
+    debug("potread: ");
+    debugln(pot);
   }
 } 
 
