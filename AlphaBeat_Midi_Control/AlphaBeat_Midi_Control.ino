@@ -6,12 +6,15 @@
  */ 
 
 #include "MIDIUSB.h"   // Arduino Pro Micro only(!)
+#include <Encoder.h>   // http://www.pjrc.com/teensy/td_libs_Encoder.html
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include "Adafruit_LEDBackpack.h"  // HT16K33 with 16-segment display
 #include "timer.h"          // https://github.com/brunocalou/Timer   
 
 Adafruit_AlphaNum4 disp[2] = { Adafruit_AlphaNum4(), Adafruit_AlphaNum4()};
+Encoder rotaryEnc(14, 15);
+long encoderPos  = -999;
 
 //switch serial output on/off
 #define DEBUG 1
@@ -31,7 +34,7 @@ Adafruit_AlphaNum4 disp[2] = { Adafruit_AlphaNum4(), Adafruit_AlphaNum4()};
 int buttonPin[3] = { 10, 9, 8 };
 byte buttonValueOld[3] = { false, false, false }; 
 byte midiMessage[3] = { 55, 49, 48 };
-byte sens = 30; //sesitivity for analogue inputs
+byte sens = 30;  //sesitivity for analogue inputs
 
 // Variables
 int analogPotPin[2] = { A0, A1 }; 
@@ -40,10 +43,10 @@ int analogpotNew[2];
 char puffer[10];
 byte minutes[2] = { 0, 0};
 byte secs[2] = { 0, 0 };
-bool playing[2] = { false, false };
 bool eom[2] = { false, false };
 bool blinker = false;
 Timer blinkTimer;
+Timer readTimer;
 
 // MIDI Data-Format
 // First parameter is the event type (0x09 = note on, 0x08 = note off).
@@ -64,20 +67,29 @@ void noteOff(byte channel, byte pitch, byte velocity) {
 
 void setup() {
   Serial.begin(115200);
+  //turn off boards LEDs
+  pinMode(LED_BUILTIN_TX,INPUT);
+  pinMode(LED_BUILTIN_RX,INPUT);
   pinMode(led1, OUTPUT); 
   pinMode(led2, OUTPUT); 
   pinMode(buttonPin[0], INPUT_PULLUP);
   pinMode(buttonPin[1], INPUT_PULLUP);
   pinMode(buttonPin[2], INPUT_PULLUP);
+  
+  //init I2C Displays
   disp[0].begin(0x71);
   disp[1].begin(0x70);
   for (byte x=0; x<2; x++) {
     disp[x].clear();
     disp[x].setBrightness(12);
+    //say "hello" from northern germany(!)
     displayTime(x,"MOIN");
   }
   blinkTimer.setInterval(600);
   blinkTimer.setCallback(DoBlink);
+  readTimer.setInterval(20);
+  readTimer.setCallback(readInputs);
+  readTimer.start();
 }
 
 // First parameter is the event type (0x0B = control change).
@@ -95,56 +107,22 @@ void checkButton(byte ID){
   bool buttonValueNew = digitalRead(buttonPin[ID]);
   if (buttonValueNew != buttonValueOld[ID]){
     if (buttonValueNew == LOW){
-      debugln("Button pressed");
+      debug("Button pressed: ");
       noteOn(0, midiMessage[ID], 64);
       MidiUSB.flush();
     }
     else {
-      debugln("Button released");
+      debug("Button released: ");
       noteOff(0, midiMessage[ID], 64);  
       MidiUSB.flush();
     }
+    debugln(ID);
     buttonValueOld[ID] = buttonValueNew;
   }  
 }
 
 void loop() {
-  
-  checkButton(0);
-  checkButton(1);
-  checkButton(2);
-  
-//potentiometers
-  int pot1 = analogRead(analogPotPin[0]);
-  int analogpotNew = analogRead(analogPotPin[0]);
 
-  if (analogpotNew - analogpotOld[0] >= sens || analogpotOld[0] - analogpotNew >= sens) {
-    analogpotOld[0] = analogpotNew;
-    analogpotNew = (map(analogpotNew, 0, 1023, 0, 127));
-    analogpotNew = (constrain(analogpotNew, 0, 127));
-    controlChange(0, 54, analogpotNew); // Set the value of controller 10 on channel 0 to new value
-//    debug("pot1: ");
-//    debugln(pot1);
-//    debug("potread: ");
-//    debugln(analogpotNew); 
-    MidiUSB.flush();
-  }
-
-  int pot2 = analogRead(analogPotPin[1]);
-  analogpotNew = analogRead(analogPotPin[1]);
-
-  if (analogpotNew - analogpotOld[1] >= sens || analogpotOld[1] - analogpotNew >= sens) {
-    analogpotOld[1] = analogpotNew;
-    analogpotNew = (map(analogpotNew, 0, 1023, 0, 127));
-    analogpotNew = (constrain(analogpotNew, 0, 127));
-    controlChange(0, 55, analogpotNew); // Set the value of controller 10 on channel 0 to new value
-//    debug("pot2: ");
-//    debugln(pot2);
-//    debug("potread: ");
-//    debugln(analogpotNew); 
-    MidiUSB.flush();
-  }
-  
   midiEventPacket_t rx;
   rx = MidiUSB.read();
     if (rx.header != 0) {
@@ -157,27 +135,26 @@ void loop() {
         debugfm(rx.byte2, HEX);
         debug("-");
         debugfm(rx.byte3, HEX);
+        debugln("-");
       }
+      // LED for Play-Button 1
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x01){
         if(rx.byte3 == 0x7F){
-          debugln(" an");
+          // change blink behaviour: *Preferences > Interface > CUE MODE 
           digitalWrite(led1, HIGH);  
-          playing[0] = true;
         } else {
-          debugln(" aus");
           digitalWrite(led1, LOW);  
-          playing[0] = false;
         }
       }
+      // LED for Play-Button 2
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x02){
         if(rx.byte3 == 0x7F){
-          playing[1] = true;
           digitalWrite(led2, HIGH); 
         } else {
-          playing[1] = false;
           digitalWrite(led2, LOW); 
         }
       }
+      // Pulsing Time Display 1 (EOM)
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x3e){
         if(rx.byte3 == 0x7F){
            eom[0] = true;
@@ -187,6 +164,7 @@ void loop() {
            disp[0].setBrightness(12);
         }
       }
+      // Pulsing Time Display 2 (EOM)
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x3f){
         if(rx.byte3 == 0x7F){
            eom[1] = true;
@@ -196,12 +174,64 @@ void loop() {
            disp[1].setBrightness(12);
         }
       }
+      // Time Displays
       if (rx.header == 0x09 && (rx.byte1 == 0x94 || rx.byte1 == 0x95)){
          handleDisplay(rx.byte1-0x94,rx.byte2,rx.byte3);
       }
     }
   blinkTimer.update();
-  //delay(50);
+  readTimer.update();
+}
+
+//read Buttons, Encoder and Pots every 20ms
+void readInputs(){
+  checkButton(0);
+  checkButton(1);
+  checkButton(2);
+
+//encoder
+  long newPos = rotaryEnc.read()/4;
+  if(newPos - encoderPos > 0){
+      controlChange(0, 46, 127);
+      debugln(encoderPos);
+      MidiUSB.flush();
+  } else if (newPos -encoderPos < 0){
+      controlChange(0, 46, 1);
+      debugln(encoderPos);
+      MidiUSB.flush();
+  }
+  encoderPos = newPos;
+  
+//potentiometers
+  int pot1 = analogRead(analogPotPin[0]);
+  int analogpotNew = analogRead(analogPotPin[0]);
+
+  if (analogpotNew - analogpotOld[0] >= sens || analogpotOld[0] - analogpotNew >= sens) {
+    analogpotOld[0] = analogpotNew;
+    analogpotNew = (map(analogpotNew, 0, 1023, 0, 127));
+    analogpotNew = (constrain(analogpotNew, 0, 127));
+    controlChange(0, 54, analogpotNew); // Set the value of controller 10 on channel 0 to new value
+    debug("pot1: ");
+    debugln(pot1);
+    debug("potread: ");
+    debugln(analogpotNew); 
+    MidiUSB.flush();
+  }
+
+  int pot2 = analogRead(analogPotPin[1]);
+  analogpotNew = analogRead(analogPotPin[1]);
+
+  if (analogpotNew - analogpotOld[1] >= sens || analogpotOld[1] - analogpotNew >= sens) {
+    analogpotOld[1] = analogpotNew;
+    analogpotNew = (map(analogpotNew, 0, 1023, 0, 127));
+    analogpotNew = (constrain(analogpotNew, 0, 127));
+    controlChange(0, 55, analogpotNew); // Set the value of controller 10 on channel 0 to new value
+    debug("pot2: ");
+    debugln(pot2);
+    debug("potread: ");
+    debugln(analogpotNew); 
+    MidiUSB.flush();
+  }
 }
 
 void handleDisplay(byte displayNr, byte byte2, byte byte3){
