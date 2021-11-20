@@ -3,13 +3,33 @@
     <info>
         <name>AlphaBeat-Mixxa</name>
         <author>Alexus2033</author>
-        <description>This mapping is used for AlphaBeat Board (based on Arduino Pro Micro)</description>
+        <description>Great mapping for AlphaBeat Board (based on Arduino Pro Micro)</description>
     </info>
     <controller id="">
         <scriptfiles>
             <file filename="AlphaBeat-scripts.js" functionprefix="ALPHABEAT"/>
         </scriptfiles>
         <controls>
+            <control>
+                <group>[Library]</group>
+                <key>MoveVertical</key>
+                <description>Rotary Encoder</description>
+                <status>0xB0</status>
+                <midino>0x2E</midino>
+                <options>
+                    <SelectKnob/>
+                </options>
+            </control>
+            <control>
+                <group>[Library]</group>
+                <key>GoToItem</key>
+                <description>Select Button</description>
+                <status>0x90</status>
+                <midino>0x37</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
             <control>
                 <group>[Channel1]</group>
                 <key>play</key>
@@ -31,30 +51,31 @@
                 </options>
             </control>
             <control>
-                <group>[Channel2]</group>
-                <key>volume</key>
-                <description>MIDI Learned from 1 messages.</description>
-                <status>0xB0</status>
-                <midino>0x36</midino>
-                <options>
-                    <normal/>
-                </options>
-            </control>
-            <control>
                 <group>[Channel1]</group>
                 <key>volume</key>
-                <description>MIDI Learned from 2 messages.</description>
+                <description>Fader for Deck 1</description>
                 <status>0xB0</status>
                 <midino>0x37</midino>
                 <options>
                     <normal/>
                 </options>
             </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>volume</key>
+                <description>Fader for Deck 2</description>
+                <status>0xB0</status>
+                <midino>0x36</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
         </controls>
-        <outputs>
+        <outputs><!-- OUTPUTS defined below............................... -->
           <output>
                 <group>[Channel1]</group>
                 <key>play_indicator</key>
+                <!-- change blink behaviour: *Preferences > Interface > CUE MODE -->
                 <description>Play LED</description>
                 <status>0x90</status>
                 <midino>0x01</midino>
@@ -69,24 +90,9 @@
                 <minimum>0.5</minimum>
             </output>
             <output>
-                <group>[Channel3]</group>
-                <key>cue_indicator</key>
-                <description>Cue LED</description>
-                <status>0x90</status>
-                <midino>0x03</midino>
-                <minimum>0.5</minimum>
-            </output>
-            <output>
-                <group>[Channel4]</group>
-                <key>cue_indicator</key>
-                <description>Cue LED</description>
-                <status>0x90</status>
-                <midino>0x04</midino>
-                <minimum>0.5</minimum>
-            </output>
-            <output>
                 <group>[Channel1]</group>
                 <key>end_of_track</key>
+                <description>Pulsing Time Display 1</description>
                 <status>0x90</status>
                 <midino>0x3E</midino>
                 <minimum>0.5</minimum>
@@ -94,6 +100,7 @@
             <output>
                 <group>[Channel2]</group>
                 <key>end_of_track</key>
+                <description>Pulsing Time Display 2</description>
                 <status>0x90</status>
                 <midino>0x3F</midino>
                 <minimum>0.5</minimum>

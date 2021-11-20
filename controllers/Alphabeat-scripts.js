@@ -44,5 +44,16 @@ ALPHABEAT.TrackPosition = function(value, group) {
     }
 }
 
+ALPHABEAT.brake_button = function(channel, control, value, status, group) {
+      var deck = parseInt(group.substring(8,9)); // work out which deck we are using 
+      var activate = value > 0;
+      
+      if (activate) {
+          engine.brake(deck, true); // enable brake effect
+      } else {
+          engine.brake(deck, false); // disable brake effect
+      }
+}
+
 ALPHABEAT.shutdown = function() {
 }
