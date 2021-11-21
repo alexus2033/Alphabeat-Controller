@@ -23,34 +23,31 @@ long encoderPos  = -999;
 #define DEBUG 1
 
 #if DEBUG == 1
-#define debug(x) Serial.print(x)
-#define debugfm(x,y) Serial.print(x,y)
-#define debugln(x) Serial.println(x)
+  #define debug(x) Serial.print(x)
+  #define debugfm(x,y) Serial.print(x,y)
+  #define debugln(x) Serial.println(x)
 #else
-#define debug(x)
-#define debugln(x)
+  #define debug(x)
+  #define debugln(x)
 #endif
 
 // Configuration-Data
-#define led1 4
-#define led2 5
+#define playLED1 4
+#define playLED2 5
 
-int buttonPin[3] = { 10, 9, 8 };
-byte buttonValueOld[3] = { false, false, false }; 
-byte midiMessage[3] = { 55, 49, 48 };
-byte sens = 30;  //sesitivity for analogue inputs
+int buttonPin[4] = { 8, 9, 10, 16 };
+byte buttonValueOld[4] = { false, false, false, false }; 
+byte midiMessage[4] = { 48, 49, 55, 56 };
 
 // Variables
 int analogPotPin[2] = { A0, A1 }; 
-int analogpotOld[2];
-int analogpotNew[2];
+int analogValOld[2] = { 0, 0};
 char puffer[10];
 byte minutes[2] = { 0, 0};
 byte secs[2] = { 0, 0 };
 bool eom[2] = { false, false };
 bool blinker = false;
 Timer blinkTimer;
-Timer readTimer;
 
 // MIDI Data-Format
 // First parameter is the event type (0x09 = note on, 0x08 = note off).
@@ -74,11 +71,11 @@ void setup() {
   //turn off boards LEDs
   pinMode(LED_BUILTIN_TX,INPUT);
   pinMode(LED_BUILTIN_RX,INPUT);
-  pinMode(led1, OUTPUT); 
-  pinMode(led2, OUTPUT); 
-  pinMode(buttonPin[0], INPUT_PULLUP);
-  pinMode(buttonPin[1], INPUT_PULLUP);
-  pinMode(buttonPin[2], INPUT_PULLUP);
+  pinMode(playLED1, OUTPUT); 
+  pinMode(playLED2, OUTPUT); 
+  for (byte x=0; x<sizeof(buttonPin); x++) {
+    pinMode(buttonPin[x], INPUT_PULLUP);
+  }
   
   //init I2C Displays
   disp[0].begin(0x71);
@@ -91,9 +88,6 @@ void setup() {
   }
   blinkTimer.setInterval(600);
   blinkTimer.setCallback(DoBlink);
-  readTimer.setInterval(20);
-  readTimer.setCallback(readInputs);
-  readTimer.start();
 }
 
 // First parameter is the event type (0x0B = control change).
@@ -127,6 +121,14 @@ void checkButton(byte ID){
 
 void loop() {
 
+  checkButton(0);
+  checkButton(1);
+  checkButton(2);
+  checkButton(3);
+
+  readPoti(0,54);
+  readPoti(1,55);
+  
   //read encoder
   long newPos = rotaryEnc.read()/4;
   byte diff = newPos - encoderPos; 
@@ -159,17 +161,17 @@ void loop() {
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x01){
         if(rx.byte3 == 0x7F){
           // change blink behaviour: *Preferences > Interface > CUE MODE 
-          digitalWrite(led1, HIGH);  
+          digitalWrite(playLED1, HIGH);  
         } else {
-          digitalWrite(led1, LOW);  
+          digitalWrite(playLED1, LOW);  
         }
       }
       // LED for Play-Button 2
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x02){
         if(rx.byte3 == 0x7F){
-          digitalWrite(led2, HIGH); 
+          digitalWrite(playLED2, HIGH); 
         } else {
-          digitalWrite(led2, LOW); 
+          digitalWrite(playLED2, LOW); 
         }
       }
       // Pulsing Time Display 1 (EOM)
@@ -198,7 +200,6 @@ void loop() {
       }
     }
   blinkTimer.update();
-  readTimer.update();
 }
 
 //do this every 20ms
@@ -233,8 +234,8 @@ void readPoti(byte potNr, int analogpotCC){
   int pot = analogRead(analogPotPin[potNr]);
   int analogpotNew = adcFilter[potNr].filter(pot);
     
-  if (analogpotNew - analogpotOld[potNr] > 5 || analogpotOld[potNr] - analogpotNew > 5) {
-    analogpotOld[potNr] = analogpotNew;
+  if (analogpotNew - analogValOld[potNr] > 5 || analogValOld[potNr] - analogpotNew > 5) {
+    analogValOld[potNr] = analogpotNew;
     analogpotNew = (map(analogpotNew, 0, 1023, 0, 127));
     analogpotNew = (constrain(analogpotNew, 0, 127));
     pot = (map(pot, 0, 1023, 0, 127));
