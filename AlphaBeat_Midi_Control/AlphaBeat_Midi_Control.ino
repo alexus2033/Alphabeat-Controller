@@ -180,7 +180,8 @@ void loop() {
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x01){
         if(rx.byte3 == 0x7F){
           // change blink behaviour: *Preferences > Interface > CUE MODE 
-          digitalWrite(playLED1, HIGH);  
+          digitalWrite(playLED1, HIGH);
+          dispActive[0]=true;  
         } else {
           digitalWrite(playLED1, LOW);  
         }
@@ -188,7 +189,8 @@ void loop() {
       // LED for Play-Button 2
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x02){
         if(rx.byte3 == 0x7F){
-          digitalWrite(playLED2, HIGH); 
+          digitalWrite(playLED2, HIGH);
+          dispActive[1]=true; 
         } else {
           digitalWrite(playLED2, LOW); 
         }
