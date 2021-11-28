@@ -15,9 +15,19 @@
                 <key>MoveVertical</key>
                 <description>Rotary Encoder</description>
                 <status>0xB0</status>
-                <midino>0x2E</midino>
+                <midino>0x30</midino>
                 <options>
                     <SelectKnob/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>rate</key>
+                <description>Set Speed</description>
+                <status>0xB0</status>
+                <midino>0x31</midino>
+                <options>
+                    <Rot64/>
                 </options>
             </control>
             <control>
@@ -25,7 +35,7 @@
                 <key>GoToItem</key>
                 <description>Select Button</description>
                 <status>0x90</status>
-                <midino>0x37</midino>
+                <midino>0x3A</midino>
                 <options>
                     <normal/>
                 </options>
@@ -35,7 +45,7 @@
                 <key>play</key>
                 <description>Start/Stop Deck 1</description>
                 <status>0x90</status>
-                <midino>0x30</midino>
+                <midino>0x32</midino>
                 <options>
                     <normal/>
                 </options>
@@ -45,7 +55,7 @@
                 <key>play</key>
                 <description>Start/Stop Deck 2</description>
                 <status>0x90</status>
-                <midino>0x31</midino>
+                <midino>0x33</midino>
                 <options>
                     <normal/>
                 </options>
@@ -54,7 +64,7 @@
                 <group>[Channel1]</group>
                 <key>cue_default</key>
                 <status>0x90</status>
-                <midino>0x38</midino>
+                <midino>0x37</midino>
                 <options>
                     <normal/>
                 </options>
@@ -63,7 +73,7 @@
                 <group>[Channel2]</group>
                 <key>cue_default</key>
                 <status>0x90</status>
-                <midino>0x39</midino>
+                <midino>0x38</midino>
                 <options>
                     <normal/>
                 </options>
@@ -73,7 +83,7 @@
                 <key>volume</key>
                 <description>Fader for Deck 1</description>
                 <status>0xB0</status>
-                <midino>0x37</midino>
+                <midino>0x2C</midino>
                 <options>
                     <normal/>
                 </options>
@@ -83,7 +93,7 @@
                 <key>volume</key>
                 <description>Fader for Deck 2</description>
                 <status>0xB0</status>
-                <midino>0x36</midino>
+                <midino>0x2D</midino>
                 <options>
                     <normal/>
                 </options>
@@ -99,15 +109,31 @@
                 <midino>0x01</midino>
                 <minimum>0.5</minimum>
             </output>
-        	<output>
+          <output>
                 <group>[Channel2]</group>
                 <key>play_indicator</key>
                 <description>Play LED</description>
                 <status>0x90</status>
                 <midino>0x02</midino>
                 <minimum>0.5</minimum>
-            </output>
-            <output>
+          </output>
+          <output>
+                <group>[Channel1]</group>
+                <key>play_latched</key>
+                <description>Play-Status</description>
+                <status>0x90</status>
+                <midino>0x11</midino>
+                <minimum>0.5</minimum>
+          </output>
+          <output>
+                <group>[Channel2]</group>
+                <key>play_latched</key>
+                <description>Play-Status</description>
+                <status>0x90</status>
+                <midino>0x12</midino>
+                <minimum>0.5</minimum>
+          </output>
+          <output>
                 <group>[Channel1]</group>
                 <key>end_of_track</key>
                 <description>Pulsing Time Display 1</description>
