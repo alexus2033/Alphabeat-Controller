@@ -35,19 +35,31 @@ long encoderPos  = -999;
 #define playLED1 4
 #define playLED2 5
 
-int buttonPin[4] = { 8, 9, 10, 16 };
-byte buttonValueOld[4] = { false, false, false, false }; 
-byte midiMessage[4] = { 48, 49, 55, 56 };
+#define modeButton 6
+#define modeTime 0
+#define modeSpeed 1
+#define modeHigh 2
+#define modeMid 3
+#define modeLow 4
+byte dispMode = modeTime;
+bool modeValueOld = false;
+ 
+int buttonPin[5] = { 8, 9, 10, 16, 20 };
+bool buttonValueOld[5] = { false, false, false, false, false }; 
+byte midiMessage[5] = { 50, 51, 58, 55, 56 };
 
 // Variables
+char puffer[10];
 int analogPotPin[2] = { A0, A1 }; 
 int analogValOld[2] = { 0, 0};
-char puffer[10];
 byte minutes[2] = { 0, 0};
 byte secs[2] = { 0, 0 };
 bool eom[2] = { false, false };
+bool dispActive[2] = { 0, 0 };
+byte dispCounter = 0;
 bool blinker = false;
 Timer blinkTimer;
+Timer dispTimer;
 
 // MIDI Data-Format
 // First parameter is the event type (0x09 = note on, 0x08 = note off).
@@ -72,7 +84,8 @@ void setup() {
   pinMode(LED_BUILTIN_TX,INPUT);
   pinMode(LED_BUILTIN_RX,INPUT);
   pinMode(playLED1, OUTPUT); 
-  pinMode(playLED2, OUTPUT); 
+  pinMode(playLED2, OUTPUT);
+  pinMode(modeButton, INPUT_PULLUP); 
   for (byte x=0; x<sizeof(buttonPin); x++) {
     pinMode(buttonPin[x], INPUT_PULLUP);
   }
@@ -84,10 +97,13 @@ void setup() {
     disp[x].clear();
     disp[x].setBrightness(12);
     //say "hello" from northern germany(!)
-    displayTime(x,"MOIN");
+    updateDisplay(x,"MOIN");
   }
   blinkTimer.setInterval(600);
   blinkTimer.setCallback(DoBlink);
+  dispTimer.setInterval(5000);
+  dispTimer.setCallback(dispAction);
+  dispTimer.start();
 }
 
 // First parameter is the event type (0x0B = control change).
@@ -125,20 +141,23 @@ void loop() {
   checkButton(1);
   checkButton(2);
   checkButton(3);
+  checkButton(4);
 
-  readPoti(0,54);
-  readPoti(1,55);
+  readPoti(0,44);
+  readPoti(1,45);
   
   //read encoder
   long newPos = rotaryEnc.read()/4;
   byte diff = newPos - encoderPos; 
   if(diff > 0){
-      controlChange(0, 46, 128-diff);
-      debugln(encoderPos);
+      controlChange(0, 48, 128-diff);
+      debugfm(diff, DEC);
+      debugln(" +");
       MidiUSB.flush();
   } else if (diff < 0){
-      controlChange(0, 46, diff);
-      debugln(encoderPos);
+      controlChange(0, 48, diff);
+      debugfm(diff, DEC);
+      debugln(" -");
       MidiUSB.flush();
   }
   encoderPos = newPos;
@@ -155,7 +174,7 @@ void loop() {
         debugfm(rx.byte2, HEX);
         debug("-");
         debugfm(rx.byte3, HEX);
-        debugln("-");
+        debugln("");
       }
       // LED for Play-Button 1
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x01){
@@ -200,16 +219,7 @@ void loop() {
       }
     }
   blinkTimer.update();
-}
-
-//do this every 20ms
-void readInputs(){
-  checkButton(0);
-  checkButton(1);
-  checkButton(2);
-
-  readPoti(0,54);
-  readPoti(1,55);
+  dispTimer.update();
 }
 
 void handleDisplay(byte displayNr, byte byte2, byte byte3){
@@ -222,10 +232,8 @@ void handleDisplay(byte displayNr, byte byte2, byte byte3){
   if (byte2 == 0x16){
       puffer[0]=0;
       formatTime(minutes[displayNr],secs[displayNr],byte3);
-      displayTime(displayNr,puffer);
-      if(minutes[displayNr]==0 && secs[displayNr]==0 && byte3==0){
-        eom[displayNr] = false;
-      }
+      updateDisplay(displayNr,puffer);
+      dispActive[displayNr]=true;
   }
 }
 
@@ -241,23 +249,45 @@ void readPoti(byte potNr, int analogpotCC){
     pot = (map(pot, 0, 1023, 0, 127));
     controlChange(0, analogpotCC, analogpotNew); // Set the value of controller 10 on channel 0 to new value
     MidiUSB.flush();
-    debug("pot1filter: ");
+    debug("potFilter: ");
     debugln(analogpotNew);
-    debug("potread: ");
+    debug("potRead: ");
     debugln(pot);
   }
 } 
 
+//runs every 5 Secs.
+void dispAction(){
+  dispCounter++;
+  if(dispCounter >= 48){       //after 4 Min check activity
+    debugln("Check dispMode");
+    if(dispActive[0]==false){ 
+      updateDisplay(0," .  . ");   
+    }
+    if(dispActive[1]==false){ 
+      updateDisplay(1," .  . ");   
+    }
+    dispCounter = 0; 
+  }
+  //reset;
+  dispActive[0]=false;
+  dispActive[1]=false;
+}
+
 void displayTest(){
-  for (byte y=1; y<15; y++) {  
+  digitalWrite(playLED1, HIGH);
+  digitalWrite(playLED2, HIGH);
+  for (byte y=0; y<15; y++) {  
     for (byte dg=0; dg<=3; dg++) {
       disp[0].writeDigitAscii(dg, y);
       disp[1].writeDigitAscii(dg, y);
     }
     disp[0].writeDisplay();
     disp[1].writeDisplay();
-    delay(200);
+    delay(300);
   }  
+  digitalWrite(playLED1, LOW);
+  digitalWrite(playLED2, LOW);
 }
 
 // format time and add it to the buffer
@@ -282,7 +312,7 @@ void formatTime(byte mi, byte sec, byte msec) {
   strcat(puffer,buf);
 } 
 
-void displayTime(byte displayNr, char* str) { 
+void updateDisplay(byte displayNr, char* str) { 
   byte pos = 0;
   for (int x = 0; x < strlen(str); x++)  //for each character in str
   {
