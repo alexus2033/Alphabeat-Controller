@@ -50,7 +50,7 @@ byte midiMessage[5] = { 50, 51, 58, 55, 56 };
 
 // Variables
 char puffer[10];
-int analogPotPin[2] = { A0, A1 }; 
+int analogPotPin[2] = { A1, A0 }; 
 int analogValOld[2] = { 0, 0};
 byte minutes[2] = { 0, 0};
 byte secs[2] = { 0, 0 };
@@ -93,12 +93,7 @@ void setup() {
   //init I2C Displays
   disp[0].begin(0x71);
   disp[1].begin(0x70);
-  for (byte x=0; x<2; x++) {
-    disp[x].clear();
-    disp[x].setBrightness(12);
-    //say "hello" from northern germany(!)
-    updateDisplay(x,"MOIN");
-  }
+  displayTest();
   blinkTimer.setInterval(600);
   blinkTimer.setCallback(DoBlink);
   dispTimer.setInterval(5000);
@@ -143,8 +138,8 @@ void loop() {
   checkButton(3);
   checkButton(4);
 
-  readPoti(0,44);
-  readPoti(1,45);
+  readPoti(0,32);
+  readPoti(1,33);
   
   //read encoder
   long newPos = rotaryEnc.read()/4;
@@ -196,7 +191,7 @@ void loop() {
         }
       }
       // Pulsing Time Display 1 (EOM)
-      if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x3e){
+      if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x3a){
         if(rx.byte3 == 0x7F){
            eom[0] = true;
            blinkTimer.start();
@@ -206,7 +201,7 @@ void loop() {
         }
       }
       // Pulsing Time Display 2 (EOM)
-      if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x3f){
+      if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x3b){
         if(rx.byte3 == 0x7F){
            eom[1] = true;
            blinkTimer.start();
@@ -214,6 +209,10 @@ void loop() {
            eom[1] = false;
            disp[1].setBrightness(12);
         }
+      }
+      // Reset/Disconnect
+      if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x3f){
+         displayTest();
       }
       // Time Displays
       if (rx.header == 0x09 && (rx.byte1 == 0x94 || rx.byte1 == 0x95)){
@@ -261,7 +260,7 @@ void readPoti(byte potNr, int analogpotCC){
 //runs every 5 Secs.
 void dispAction(){
   dispCounter++;
-  if(dispCounter >= 48){       //after 4 Min check activity
+  if(dispCounter >= 96){       //after 8 Min check activity
     debugln("Check dispMode");
     if(dispActive[0]==false){ 
       updateDisplay(0," .  . ");   
@@ -277,6 +276,7 @@ void dispAction(){
 }
 
 void displayTest(){
+  dispCounter = 0;
   digitalWrite(playLED1, HIGH);
   digitalWrite(playLED2, HIGH);
   for (byte y=0; y<15; y++) {  
@@ -286,10 +286,17 @@ void displayTest(){
     }
     disp[0].writeDisplay();
     disp[1].writeDisplay();
-    delay(300);
+    delay(200);
   }  
   digitalWrite(playLED1, LOW);
   digitalWrite(playLED2, LOW);
+  for (byte x=0; x<2; x++) {
+    eom[x] = false;
+    disp[x].clear();
+    disp[x].setBrightness(12);
+    //say "hello" from northern germany(!)
+    updateDisplay(x,"MOIN");
+  }  
 }
 
 // format time and add it to the buffer

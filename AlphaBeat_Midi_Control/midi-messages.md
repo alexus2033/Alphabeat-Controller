@@ -2,10 +2,13 @@
 
 | PIN | DEC/HEX | Action |
 | --- | --------|------- |
-| A0  | 44/2C  | Fader1 |
-| A1  | 45/2D  | Fader2 |
-|     | 48/30  | Select-Track |
-|     | 49/31  | Speed  |
+| A1  | 32/20  | Fader1 |
+| A0  | 33/21  | Fader2 |
+|     | 35/23  | Select-Track |
+|     | 36/24  | Speed  |
+|     | 37/25  | High   |
+|     | 38/26  | Mid    |
+|     | 39/27  | Low    |
 
 | PIN | DEC/HEX | Action |
 | --- | --------|------- |
@@ -25,5 +28,6 @@
 |     | 14  | Minutes   |
 |     | 15  | Seconds   |
 |     | 16  | 1/10 Seconds
-|     | 3E  | EOM Deck 1
-|     | 3F  | EOM Deck 2
+|     | 3A  | EOM Deck 1
+|     | 3B  | EOM Deck 2
+|     | 3F  | Reset/Close
