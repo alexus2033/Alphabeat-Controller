@@ -83,7 +83,7 @@
                 <key>volume</key>
                 <description>Fader for Deck 1</description>
                 <status>0xB0</status>
-                <midino>0x2C</midino>
+                <midino>0x20</midino>
                 <options>
                     <normal/>
                 </options>
@@ -93,7 +93,7 @@
                 <key>volume</key>
                 <description>Fader for Deck 2</description>
                 <status>0xB0</status>
-                <midino>0x2D</midino>
+                <midino>0x21</midino>
                 <options>
                     <normal/>
                 </options>
@@ -119,26 +119,10 @@
           </output>
           <output>
                 <group>[Channel1]</group>
-                <key>play_latched</key>
-                <description>Play-Status</description>
-                <status>0x90</status>
-                <midino>0x11</midino>
-                <minimum>0.5</minimum>
-          </output>
-          <output>
-                <group>[Channel2]</group>
-                <key>play_latched</key>
-                <description>Play-Status</description>
-                <status>0x90</status>
-                <midino>0x12</midino>
-                <minimum>0.5</minimum>
-          </output>
-          <output>
-                <group>[Channel1]</group>
                 <key>end_of_track</key>
                 <description>Pulsing Time Display 1</description>
                 <status>0x90</status>
-                <midino>0x3E</midino>
+                <midino>0x3A</midino>
                 <minimum>0.5</minimum>
             </output>
             <output>
@@ -146,7 +130,7 @@
                 <key>end_of_track</key>
                 <description>Pulsing Time Display 2</description>
                 <status>0x90</status>
-                <midino>0x3F</midino>
+                <midino>0x3B</midino>
                 <minimum>0.5</minimum>
             </output>
         </outputs>

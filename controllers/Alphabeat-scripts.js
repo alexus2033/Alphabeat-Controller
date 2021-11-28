@@ -1,10 +1,10 @@
 var ALPHABEAT = {};
-ALPHABEAT.prevTime = [0, 0, 0, 0];
+ALPHABEAT.prevTime = [-1, -1, -1, -1];
 
 /* DECK INITIALIZATION */
 ALPHABEAT.init = function() {
 
-    // Track Position LEDs for Jog Wheel and Slicer
+    // update Displays
     engine.makeConnection("[Channel1]", "playposition", ALPHABEAT.TrackPosition);
     engine.makeConnection("[Channel2]", "playposition", ALPHABEAT.TrackPosition);
 }
@@ -56,4 +56,6 @@ ALPHABEAT.brake_button = function(channel, control, value, status, group) {
 }
 
 ALPHABEAT.shutdown = function() {
+    //reset display
+    midi.sendShortMsg(0x90, 0x3F, 0x7F);
 }
