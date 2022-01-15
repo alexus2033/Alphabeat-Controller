@@ -14,7 +14,7 @@ Arduino-Based MIDI-Interface for [MIXXX DJ-Software](https://mixxx.org)
 * 16-segment LED displays with [HT16K33](https://cdn-shop.adafruit.com/datasheets/ht16K33v110.pdf)
 * 2 Linear Fader 5k
 * [Rotary Encoder](https://www.bourns.com/data/global/pdfs/ECW1J.pdf)
-* Inverted Schmitt-Trigger IC [SN74HC14](https://www.ti.com/product/SN74HC14)
+* Inverted Schmitt-Trigger IC [SN74HC14](https://www.ti.com/lit/ds/symlink/sn74hc14.pdf)
 * LEDs and Buttons
 
 ## Change Name of USB-Hardware
