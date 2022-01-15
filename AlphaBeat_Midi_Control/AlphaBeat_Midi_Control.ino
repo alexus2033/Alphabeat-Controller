@@ -43,8 +43,8 @@ bool modeValueOld = false;
 
 // Buttons
 int buttonPin[5] = { 8, 9, 14, 16 };
-bool buttonValueOld[6] = { false, false, false, false, false, false }; 
-byte midiMessage[6] = { 50, 51, 58, 55, 56, 0 };
+bool buttonValueOld[5] = { false, false, false, false, false }; 
+byte midiMessage[5] = { 50, 51, 55, 56, 58 };
 
 // Variables
 char puffer[10];
@@ -115,13 +115,12 @@ void checkButton(byte ID){
     if (buttonValueNew == LOW){
       debug("Button pressed: ");
       noteOn(0, midiMessage[ID], 64);
-      MidiUSB.flush();
     }
     else {
       debug("Button released: ");
       noteOff(0, midiMessage[ID], 64);  
-      MidiUSB.flush();
     }
+    MidiUSB.flush();
     debugln(ID);
     buttonValueOld[ID] = buttonValueNew;
   }  
@@ -155,7 +154,7 @@ void loop() {
   checkButton(1);
   checkButton(2);
   checkButton(3);
-  //checkModeButton(5);
+  //checkModeButton(4);
 
   readPoti(0,32);
   readPoti(1,33);
