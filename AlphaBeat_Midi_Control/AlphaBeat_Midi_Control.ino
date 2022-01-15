@@ -8,15 +8,13 @@
 #include <Arduino.h>
 #include "MIDIUSB.h"   // Arduino Pro Micro only(!)
 #include <Encoder.h>   // http://www.pjrc.com/teensy/td_libs_Encoder.html
-#include <Wire.h>
-#include <Adafruit_GFX.h>
 #include "Adafruit_LEDBackpack.h"  // HT16K33 with 16-segment display
 #include "timer.h"          // https://github.com/brunocalou/Timer   
 #include <Ewma.h>           // https://github.com/jonnieZG/EWMA
 
 Ewma adcFilter[2] = { (0.11),(0.11) }; 
 Adafruit_AlphaNum4 disp[2] = { Adafruit_AlphaNum4(), Adafruit_AlphaNum4()};
-Encoder rotaryEnc(14, 15);
+Encoder rotaryEnc(7, 6);
 long encoderPos  = -999;
 
 //switch serial output on/off
@@ -35,7 +33,6 @@ long encoderPos  = -999;
 #define playLED1 4
 #define playLED2 5
 
-#define modeButton 6
 #define modeTime 0
 #define modeSpeed 1
 #define modeHigh 2
@@ -43,10 +40,11 @@ long encoderPos  = -999;
 #define modeLow 4
 byte dispMode = modeTime;
 bool modeValueOld = false;
- 
-int buttonPin[5] = { 8, 9, 10, 16, 20 };
-bool buttonValueOld[5] = { false, false, false, false, false }; 
-byte midiMessage[5] = { 50, 51, 58, 55, 56 };
+
+// Buttons
+int buttonPin[5] = { 8, 9, 14, 16 };
+bool buttonValueOld[6] = { false, false, false, false, false, false }; 
+byte midiMessage[6] = { 50, 51, 58, 55, 56, 0 };
 
 // Variables
 char puffer[10];
@@ -84,12 +82,11 @@ void setup() {
   pinMode(LED_BUILTIN_TX,INPUT);
   pinMode(LED_BUILTIN_RX,INPUT);
   pinMode(playLED1, OUTPUT); 
-  pinMode(playLED2, OUTPUT);
-  pinMode(modeButton, INPUT_PULLUP); 
+  pinMode(playLED2, OUTPUT); 
   for (byte x=0; x<sizeof(buttonPin); x++) {
-    pinMode(buttonPin[x], INPUT_PULLUP);
+    pinMode(buttonPin[x], INPUT);
   }
-  
+   
   //init I2C Displays
   disp[0].begin(0x71);
   disp[1].begin(0x70);
@@ -130,27 +127,49 @@ void checkButton(byte ID){
   }  
 }
 
+void checkModeButton(byte ID){
+
+  bool buttonValueNew = digitalRead(buttonPin[ID]);
+  if (buttonValueNew != buttonValueOld[ID]){
+    if (buttonValueNew == LOW){
+      debug("Button pressed: ");
+      dispMode++;
+      if(dispMode == modeTime){
+        
+      }
+      if(dispMode > modeSpeed){
+          dispMode = modeTime;
+      }
+    }
+    else {
+      debug("Button released: ");
+    }
+    debugln(ID);
+    buttonValueOld[ID] = buttonValueNew;
+  }  
+}
+
 void loop() {
 
   checkButton(0);
   checkButton(1);
   checkButton(2);
   checkButton(3);
-  checkButton(4);
+  //checkModeButton(5);
 
   readPoti(0,32);
   readPoti(1,33);
-  
+
   //read encoder
   long newPos = rotaryEnc.read()/4;
   byte diff = newPos - encoderPos; 
   if(diff > 0){
-      controlChange(0, 48, 128-diff);
+      controlChange(0, 48+dispMode, 128-diff); 
       debugfm(diff, DEC);
       debugln(" +");
       MidiUSB.flush();
   } else if (diff < 0){
-      controlChange(0, 48, diff);
+      controlChange(0, 48+dispMode, diff);
       debugfm(diff, DEC);
       debugln(" -");
       MidiUSB.flush();
@@ -277,12 +296,13 @@ void dispAction(){
 
 void displayTest(){
   dispCounter = 0;
+  byte test[15] = {14,13,7,10,9,8,6,11,12,2,1,0,5,4,3};  
   digitalWrite(playLED1, HIGH);
   digitalWrite(playLED2, HIGH);
   for (byte y=0; y<15; y++) {  
     for (byte dg=0; dg<=3; dg++) {
-      disp[0].writeDigitAscii(dg, y);
-      disp[1].writeDigitAscii(dg, y);
+      disp[0].writeDigitAscii(dg, test[y]);
+      disp[1].writeDigitAscii(dg, test[y]);
     }
     disp[0].writeDisplay();
     disp[1].writeDisplay();
