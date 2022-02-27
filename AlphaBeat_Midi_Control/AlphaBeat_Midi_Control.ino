@@ -19,6 +19,7 @@ long encoderPos  = -999;
 
 //switch serial output on/off
 #define DEBUG 1
+#define DEBUGPOTI 0
 
 #if DEBUG == 1
   #define debug(x) Serial.print(x)
@@ -29,22 +30,33 @@ long encoderPos  = -999;
   #define debugln(x)
 #endif
 
+#if DEBUGPOTI == 1
+  #define debugpoti(x) Serial.print(x)
+  #define debugpotiln(x) Serial.println(x)
+#else
+  #define debugpoti(x)
+  #define debugpotiln(x)
+#endif
+
 // Configuration-Data
 #define playLED1 4
 #define playLED2 5
+// Sensitifity Poti-Change
+#define POTISens 6
 
 #define modeTime 0
 #define modeSpeed 1
 #define modeHigh 2
 #define modeMid 3
 #define modeLow 4
+#define modeVolume 5
 byte dispMode = modeTime;
 bool modeValueOld = false;
 
 // Buttons
-int buttonPin[5] = { 8, 9, 14, 16 };
-bool buttonValueOld[5] = { false, false, false, false, false }; 
-byte midiMessage[5] = { 50, 51, 55, 56, 58 };
+int buttonPin[6] = { 8, 9, 14, 15, 10, 16 };
+bool buttonValueOld[6] = { false, false, false, false, false }; 
+byte midiMessage[6] = { 50, 51, 55, 56, 58 };
 
 // Variables
 char puffer[10];
@@ -53,8 +65,7 @@ int analogValOld[2] = { 0, 0};
 byte minutes[2] = { 0, 0};
 byte secs[2] = { 0, 0 };
 bool eom[2] = { false, false };
-bool dispActive[2] = { 0, 0 };
-byte dispCounter = 0;
+byte dispCounter[2] = { 0, 0 };
 bool blinker = false;
 Timer blinkTimer;
 Timer dispTimer;
@@ -126,6 +137,7 @@ void checkButton(byte ID){
   }  
 }
 
+//switch Mode for rotary Encoder
 void checkModeButton(byte ID){
 
   bool buttonValueNew = digitalRead(buttonPin[ID]);
@@ -133,11 +145,19 @@ void checkModeButton(byte ID){
     if (buttonValueNew == LOW){
       debug("Button pressed: ");
       dispMode++;
-      if(dispMode == modeTime){
-        
-      }
-      if(dispMode > modeSpeed){
+      if(dispMode > 5){
           dispMode = modeTime;
+      }
+      if(dispMode == modeSpeed){
+        updateDisplay(1,"TEMP");
+      } else if (dispMode == modeHigh){
+        updateDisplay(1,"HIGH");
+      } else if (dispMode == modeMid){
+        updateDisplay(1,"MID ");
+      } else if (dispMode == modeLow){
+        updateDisplay(1,"LOW ");
+      } else if (dispMode == modeVolume){
+        updateDisplay(1,"VOL ");
       }
     }
     else {
@@ -150,30 +170,17 @@ void checkModeButton(byte ID){
 
 void loop() {
 
-  checkButton(0);
-  checkButton(1);
-  checkButton(2);
-  checkButton(3);
-  //checkModeButton(4);
+  checkButton(0);     //play deck 1
+  checkButton(1);     //play deck 2
+  checkButton(2);     //cue deck 1
+  checkButton(3);     //cue deck 2
+  checkButton(4);     //select
+  checkModeButton(5); //mode
 
+  readEncoder();
+    
   readPoti(0,32);
   readPoti(1,33);
-
-  //read encoder
-  long newPos = rotaryEnc.read()/4;
-  byte diff = newPos - encoderPos; 
-  if(diff > 0){
-      controlChange(0, 48+dispMode, 128-diff); 
-      debugfm(diff, DEC);
-      debugln(" +");
-      MidiUSB.flush();
-  } else if (diff < 0){
-      controlChange(0, 48+dispMode, diff);
-      debugfm(diff, DEC);
-      debugln(" -");
-      MidiUSB.flush();
-  }
-  encoderPos = newPos;
 
   midiEventPacket_t rx;
   rx = MidiUSB.read();
@@ -194,7 +201,7 @@ void loop() {
         if(rx.byte3 == 0x7F){
           // change blink behaviour: *Preferences > Interface > CUE MODE 
           digitalWrite(playLED1, HIGH);
-          dispActive[0]=true;  
+          dispCounter[0]=0; //reset inactive counter  
         } else {
           digitalWrite(playLED1, LOW);  
         }
@@ -203,7 +210,7 @@ void loop() {
       if (rx.header == 0x09 && rx.byte1 == 0x90 && rx.byte2 == 0x02){
         if(rx.byte3 == 0x7F){
           digitalWrite(playLED2, HIGH);
-          dispActive[1]=true; 
+          dispCounter[1]=0; //reset inactive counter
         } else {
           digitalWrite(playLED2, LOW); 
         }
@@ -241,6 +248,24 @@ void loop() {
   dispTimer.update();
 }
 
+//time-critical
+void readEncoder(){
+  long newPos = rotaryEnc.read()/4; 
+  long diff = newPos - encoderPos; 
+  if(diff > 0){
+      controlChange(0, 48+dispMode, 128-diff); 
+      debugfm(diff, DEC);
+      debugln(" +");
+      MidiUSB.flush();
+  } else if (diff < 0){
+      controlChange(0, 48+dispMode, diff);
+      debugfm(diff, DEC);
+      debugln(" -");
+      MidiUSB.flush();
+  }
+  encoderPos = newPos;
+}
+
 void handleDisplay(byte displayNr, byte byte2, byte byte3){
   if (byte2 == 0x14){
       minutes[displayNr]=byte3;
@@ -252,7 +277,7 @@ void handleDisplay(byte displayNr, byte byte2, byte byte3){
       puffer[0]=0;
       formatTime(minutes[displayNr],secs[displayNr],byte3);
       updateDisplay(displayNr,puffer);
-      dispActive[displayNr]=true;
+      dispCounter[displayNr]=0;
   }
 }
 
@@ -261,40 +286,43 @@ void readPoti(byte potNr, int analogpotCC){
   int pot = analogRead(analogPotPin[potNr]);
   int analogpotNew = adcFilter[potNr].filter(pot);
     
-  if (analogpotNew - analogValOld[potNr] > 5 || analogValOld[potNr] - analogpotNew > 5) {
+  if (analogpotNew - analogValOld[potNr] > POTISens || analogValOld[potNr] - analogpotNew > POTISens) {
     analogValOld[potNr] = analogpotNew;
     analogpotNew = (map(analogpotNew, 0, 1023, 0, 127));
     analogpotNew = (constrain(analogpotNew, 0, 127));
     pot = (map(pot, 0, 1023, 0, 127));
     controlChange(0, analogpotCC, analogpotNew); // Set the value of controller 10 on channel 0 to new value
     MidiUSB.flush();
-    debug("potFilter: ");
-    debugln(analogpotNew);
-    debug("potRead: ");
-    debugln(pot);
+    debugpoti("potFilter: ");
+    debugpotiln(analogpotNew);
+    debugpoti("potRead: ");
+    debugpotiln(pot);
   }
 } 
 
 //runs every 5 Secs.
 void dispAction(){
-  dispCounter++;
-  if(dispCounter >= 96){       //after 8 Min check activity
+  dispCounter[0]++;
+  dispCounter[1]++;
+  if(dispCounter[0] >= 96){       //after 8 Min check activity
     debugln("Check dispMode");
-    if(dispActive[0]==false){ 
-      updateDisplay(0," .  . ");   
-    }
-    if(dispActive[1]==false){ 
-      updateDisplay(1," .  . ");   
-    }
-    dispCounter = 0; 
+    updateDisplay(0," .  . ");   
   }
-  //reset;
-  dispActive[0]=false;
-  dispActive[1]=false;
+  if(dispCounter[1] >= 96){ 
+    updateDisplay(1," .  . ");
+  }
+  //avoid overflow
+  if(dispCounter[0]>250){
+    dispCounter[0]==250;
+  }
+  if(dispCounter[1]>250){
+    dispCounter[1]==250;
+  }
 }
 
 void displayTest(){
-  dispCounter = 0;
+  dispCounter[0] = 0;
+  dispCounter[1] = 0;
   byte test[15] = {14,13,7,10,9,8,6,11,12,2,1,0,5,4,3};  
   digitalWrite(playLED1, HIGH);
   digitalWrite(playLED2, HIGH);
