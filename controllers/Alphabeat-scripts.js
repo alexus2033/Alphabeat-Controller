@@ -13,7 +13,6 @@ ALPHABEAT.init = function() {
 ALPHABEAT.TrackPosition = function(value, group) {
     // do nothing before track starts
     if (value === 0) {
-        ALPHABEAT.prevPadLED[deckOffset]=0;
         return;
     }
     // define some variables first
@@ -26,11 +25,11 @@ ALPHABEAT.TrackPosition = function(value, group) {
     playPosition=Math.floor(playPosition*10);
     //time changed?
     if (playPosition != ALPHABEAT.prevTime[deckOffset]) {
-      print(parseInt((ALPHABEAT.prevTime[deckOffset]/10)%60));
+
       var millis = parseInt((playPosition%10))
       , secs = parseInt((playPosition/10)%60)
       , mins = parseInt((playPosition/(10*60))%60);
-      print(secs);
+
       if(parseInt((ALPHABEAT.prevTime[deckOffset]/(10*60))%60) != mins){
          midi.sendShortMsg(0x94 + deckOffset, 0x14, mins);
       }
@@ -43,6 +42,15 @@ ALPHABEAT.TrackPosition = function(value, group) {
       ALPHABEAT.prevTime[deckOffset] = playPosition;
     }
 }
+
+ALPHABEAT.selectItem = function(ch, midino, value, status, group) {
+    var deck = parseInt(group.substring(8,9)); // work out which deck we are using
+    if(value != 64){
+        engine.setValue(group, "MoveVertical", value-64);
+        print(deck);
+    }
+
+};
 
 ALPHABEAT.brake_button = function(channel, control, value, status, group) {
       var deck = parseInt(group.substring(8,9)); // work out which deck we are using 

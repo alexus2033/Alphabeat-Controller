@@ -12,12 +12,12 @@
         <controls>
             <control>
                 <group>[Library]</group>
-                <key>MoveVertical</key>
+                <key>ALPHABEAT.selectItem</key>
                 <description>Rotary Encoder</description>
                 <status>0xB0</status>
                 <midino>0x30</midino>
                 <options>
-                    <SelectKnob/>
+                    <script-binding/>
                 </options>
             </control>
             <control>
