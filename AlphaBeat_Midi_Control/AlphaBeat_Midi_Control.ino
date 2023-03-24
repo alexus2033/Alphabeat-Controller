@@ -48,13 +48,13 @@ long encoderPos = 0;
 // Sensitifity Poti-Change
 #define POTISens 4
 
-#define modeTime 0
+#define modeSelect 0
 #define modeSpeed 1
 #define modeHigh 2
 #define modeMid 3
 #define modeLow 4
 #define modeVolume 5
-byte dispMode = modeTime;
+byte dispMode = modeSelect;
 bool modeValueOld = false;
 
 // Buttons
@@ -70,6 +70,7 @@ byte minutes[2] = { 0, 0};
 byte secs[2] = { 0, 0 };
 bool eom[2] = { false, false };
 byte dispCounter[2] = { 0, 0 };
+byte deck1Active = true;
 bool blinker = false;
 Timer blinkTimer;
 Timer dispTimer;
@@ -152,18 +153,24 @@ void checkModeButton(byte ID){
       debug("Button pressed: ");
       dispMode++;
       if(dispMode > 5){
-          dispMode = modeTime;
+          dispMode = modeSelect;
       }
+      byte displayNr = 0;
+      if(deck1Active){
+        displayNr = 1;
+      }      
       if(dispMode == modeSpeed){
-        updateDisplay(1,"TEMP");
+        updateDisplay(displayNr,"TEMP");
       } else if (dispMode == modeHigh){
-        updateDisplay(1,"HIGH");
+        updateDisplay(displayNr,"HIGH");
       } else if (dispMode == modeMid){
-        updateDisplay(1,"MID ");
+        updateDisplay(displayNr,"mID ");
       } else if (dispMode == modeLow){
-        updateDisplay(1,"LOW ");
+        updateDisplay(displayNr,"LOW ");
       } else if (dispMode == modeVolume){
-        updateDisplay(1,"VOL ");
+        updateDisplay(displayNr,"VOL ");
+      } else {
+        updateDisplay(displayNr,"SEL ");
       }
     }
     else {
@@ -185,8 +192,8 @@ void loop() {
 
   readEncoder();
     
-  readPoti(0,32);
-  readPoti(1,33);
+  readPoti(0,31);
+  readPoti(1,41);
 
   midiEventPacket_t rx;
   rx = MidiUSB.read();
@@ -258,15 +265,14 @@ void loop() {
 void readEncoder(){
   long newPos = rotaryEnc.read()/4;
   long diff = newPos - encoderPos; 
-  if(diff > 0){
-      controlChange(0, 48+dispMode, 64+diff); 
+
+  if(diff != 0){
+      if(deck1Active){
+        controlChange(0, 32+dispMode, 64+diff); 
+      } else{
+        controlChange(0, 42+dispMode, 64+diff);
+      }
       debug(newPos);
-      debugln(" +");
-      MidiUSB.flush();
-  } else if (diff < 0){
-      controlChange(0, 48+dispMode, 64+diff);
-      debug(newPos);
-      debugln(" -");
       MidiUSB.flush();
   }
   encoderPos = newPos;
@@ -284,6 +290,7 @@ void handleDisplay(byte displayNr, byte byte2, byte byte3){
       formatTime(minutes[displayNr],secs[displayNr],byte3);
       updateDisplay(displayNr,puffer);
       dispCounter[displayNr]=0;
+      deck1Active = (displayNr==0);
   }
 }
 

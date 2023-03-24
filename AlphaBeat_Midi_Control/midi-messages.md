@@ -2,13 +2,20 @@
 
 | PIN | DEC/HEX | Action |
 | --- | --------|------- |
-| A1  | 32/20  | Fader1 |
-| A0  | 33/21  | Fader2 |
-|     | 35/23  | Select-Track |
-|     | 36/24  | Speed  |
-|     | 37/25  | High   |
-|     | 38/26  | Mid    |
-|     | 39/27  | Low    |
+| A1  | 31/0x1F | Fader1 |
+| A0  | 41/0x29 | Fader2 |
+|     | 32/0x20 | Select-Track |
+|     | 42/0x2A | Select-Track |
+|     | 33/0x21 | Speed1 |
+|     | 43/0x2B | Speed2 |
+|     | 34/0x22 | High1  |
+|     | 44/0x2C | High2  |
+|     | 35/0x23 | Mid1   |
+|     | 45/0x2D | Mid2   |
+|     | 36/0x24 | Low1   |
+|     | 46/0x2E | Low2   |
+|     | 37/0x25 | Vol1   |
+|     | 47/0x2F | Vol2   |
 
 | PIN | DEC/HEX | Action |
 | --- | --------|------- |
@@ -27,7 +34,12 @@
 | 5   | 02  | Play LED2 |
 |     | 14  | Minutes   |
 |     | 15  | Seconds   |
-|     | 16  | 1/10 Seconds
-|     | 3A  | EOM Deck 1
-|     | 3B  | EOM Deck 2
-|     | 3F  | Reset/Close
+|     | 16  | 1/10 Seconds |
+|     | 3A  | EOM Deck 1   |
+|     | 3B  | EOM Deck 2   |
+|     | 3F  | Reset/Close  |
+
+### Documentation ###
+
+[Controls](https://manual.mixxx.org/2.3/en/chapters/appendix/mixxx_controls.html)
+[Mapping](https://github.com/mixxxdj/mixxx/wiki/Midi-Controller-Mapping-File-Format)
