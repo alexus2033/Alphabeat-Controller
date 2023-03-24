@@ -44,10 +44,19 @@ ALPHABEAT.TrackPosition = function(value, group) {
 }
 
 ALPHABEAT.selectItem = function(ch, midino, value, status, group) {
-    var deck = parseInt(group.substring(8,9)); // work out which deck we are using
+    
     if(value != 64){
         engine.setValue(group, "MoveVertical", value-64);
-        print(deck);
+    }
+
+};
+
+ALPHABEAT.changeVolume = function(ch, midino, value, status, group) {
+    
+    if(value != 64){
+        value = (value-64)*0.1;
+        curvol=engine.getValue(group, "volume");
+        engine.setValue(group, "volume", curvol+value);
     }
 
 };
