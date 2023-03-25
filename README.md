@@ -1,6 +1,16 @@
 # Alphabeat-Controller
 Arduino-Based MIDI-Interface for [MIXXX DJ-Software](https://mixxx.org)
 
+![AlphaBeat_Midi_Control.jpg](/AlphaBeat_Midi_Control.jpg)
+
+## Features
+* Fast-responsive faders for 2 decks
+* Big Time-Display with EOM-Indicator
+* Track-Selector
+* Play/Cue Buttons with LED
+* Speed-Control
+* EQ High/Mid/Low Filter
+
 ## Used Libraries
 * [MIDIUSB](https://tigoe.github.io/SoundExamples/midiusb.html)
 * [Wire (I2C)](https://www.arduino.cc/en/reference/wire)
@@ -19,12 +29,18 @@ Arduino-Based MIDI-Interface for [MIXXX DJ-Software](https://mixxx.org)
 
 ## Change Name of USB-Hardware
 Open **boards.txt** located at
-
+```
 C:\Program Files (x86)\Arduino\hardware\arduino\avr\boards.txt
-
+```
 or if you installed updates for your Arduino-board
-
+```
 C:\Users\<User-Name>\AppData\Local\Arduino15\packages\arduino\hardware\avr\<verion>\boards.txt
-
+```
 search for the section `micro.name=Arduino Micro`
 and change the following line only: `micro.build.usb_product="AlphaBeat-Mixxa"`
+
+## Install MIDI-Mapping
+Copy Folder [controllers](\controllers) to
+```
+C:\Users\<User-Name>\AppData\Local\Mixxx
+```
