@@ -111,7 +111,7 @@ void setup() {
   pinMode(LED_BUILTIN_RX,INPUT);
   blinkTimer.setInterval(600);
   blinkTimer.setCallback(DoBlink);
-  dispTimer.setInterval(5000);
+  dispTimer.setInterval(8000); //8 seconds
   dispTimer.setCallback(dispAction);
   dispTimer.start();
 }
@@ -164,7 +164,7 @@ void checkModeButton(byte ID){
       } else if (dispMode == modeHigh){
         updateDisplay(displayNr,"HIGH");
       } else if (dispMode == modeMid){
-        updateDisplay(displayNr,"mID ");
+        updateDisplay(displayNr,"MID ");
       } else if (dispMode == modeLow){
         updateDisplay(displayNr,"LOW ");
       } else if (dispMode == modeVolume){
@@ -313,27 +313,33 @@ void readPoti(byte potNr, int analogpotCC){
   }
 } 
 
-//runs every 5 Secs.
+//runs every 8 Secs.
 void dispAction(){
   dispCounter[0]++;
   dispCounter[1]++;
-  if(dispCounter[0] >= 96){       //after 8 Min check activity
-    debugln("Check dispMode");
-    updateDisplay(0," .  . ");   
+  if(dispCounter[1] >= 75){ 
+    if(dispCounter[0] >= 75){
+      debugln("reset dispMode"); //both decks are sleeping
+      dispMode = modeSelect;
+    }
+    if(dispMode == modeSelect){
+      updateDisplay(1," .  . "); //hide display after 10 Min inactivity
+    }
   }
-  if(dispCounter[1] >= 96){ 
-    updateDisplay(1," .  . ");
+  if(dispCounter[0] >= 75 && dispMode == modeSelect){
+    updateDisplay(0," .  . ");   //hide display after 10 Min inactivity
   }
   //avoid overflow
-  if(dispCounter[0]>250){
-    dispCounter[0]==250;
+  if(dispCounter[0] > 250){
+    dispCounter[0] = 250;
   }
-  if(dispCounter[1]>250){
-    dispCounter[1]==250;
+  if(dispCounter[1] > 250){
+    dispCounter[1] = 250;
   }
 }
 
 void displayTest(){
+  dispMode = modeSelect;
   dispCounter[0] = 0;
   dispCounter[1] = 0;
   byte test[15] = {14,13,7,10,9,8,6,11,12,2,1,0,5,4,3};  
