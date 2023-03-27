@@ -263,13 +263,13 @@ void loop() {
 
 //time-critical
 void readEncoder(){
-  long newPos = rotaryEnc.read()/4;
+  long newPos = rotaryEnc.read()/4*-1;
   long diff = newPos - encoderPos; 
 
   if(diff != 0){
       if(deck1Active){
         controlChange(0, 32+dispMode, 64+diff); 
-      } else{
+      } else { //deck 2
         controlChange(0, 42+dispMode, 64+diff);
       }
       debug(newPos);
@@ -342,6 +342,7 @@ void displayTest(){
   dispMode = modeSelect;
   dispCounter[0] = 0;
   dispCounter[1] = 0;
+  encoderPos = 0;
   byte test[15] = {14,13,7,10,9,8,6,11,12,2,1,0,5,4,3};  
   digitalWrite(playLED1, HIGH);
   digitalWrite(playLED2, HIGH);

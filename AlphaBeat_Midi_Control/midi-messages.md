@@ -17,29 +17,29 @@
 |     | 37/0x25 | Vol1   |
 |     | 47/0x2F | Vol2   |
 
-| PIN | DEC/HEX | Action |
-| --- | --------|------- |
-| 8   | 50/32  | Play1 |
-| 9   | 51/33  | Play2 |
-| 20  | 55/37  | Cue1 |
-| 16  | 56/38  | Cue2 |
-| 10  | 58/3A  | Select1 |
-| 6   | 59/3B  | Select2 |
+| PIN | DEC/HEX  | Action |
+| --- | ---------|------- |
+| 8   | 50/0x32  | Play1 |
+| 9   | 51/0x33  | Play2 |
+| 20  | 55/0x37  | Cue1 |
+| 16  | 56/0x38  | Cue2 |
+| 10  | 58/0x3A  | Select1 |
+| 6   | 59/0x3B  | Select2 |
 
 ### Receive Message from Application
 
-| PIN | HEX | Action    |
-| --- | ----|---------- |
-| 4   | 01  | Play LED1 |
-| 5   | 02  | Play LED2 |
-|     | 14  | Minutes   |
-|     | 15  | Seconds   |
-|     | 16  | 1/10 Seconds |
-|     | 3A  | EOM Deck 1   |
-|     | 3B  | EOM Deck 2   |
-|     | 3F  | Reset/Close  |
+| PIN | HEX   | Action    |
+| --- | ------|---------- |
+| 4   | 0x01  | Play LED1 |
+| 5   | 0x02  | Play LED2 |
+|     | 0x14  | Minutes   |
+|     | 0x15  | Seconds   |
+|     | 0x16  | 1/10 Seconds |
+|     | 0x3A  | EOM Deck 1   |
+|     | 0x3B  | EOM Deck 2   |
+|     | 0x3F  | Reset/Close  |
 
 ### Documentation ###
 
-[Controls](https://manual.mixxx.org/2.3/en/chapters/appendix/mixxx_controls.html)
 [Mapping](https://github.com/mixxxdj/mixxx/wiki/Midi-Controller-Mapping-File-Format)
+[Controls](https://manual.mixxx.org/2.3/en/chapters/appendix/mixxx_controls.html)
