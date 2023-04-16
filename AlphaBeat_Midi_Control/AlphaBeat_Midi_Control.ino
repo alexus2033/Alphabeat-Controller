@@ -324,12 +324,12 @@ void dispAction(){
     }
     if(dispMode == modeSelect){
       updateDisplay(1," .  . "); //hide display after 10 Min inactivity
-      eom[1]==false;
+      eom[1]=false;
     }
   }
   if(dispCounter[0] >= 75 && dispMode == modeSelect){
     updateDisplay(0," .  . ");   //hide display after 10 Min inactivity
-    eom[0]==false;
+    eom[0]=false;
   }
   //avoid overflow
   if(dispCounter[0] > 250){
@@ -408,6 +408,9 @@ void updateDisplay(byte displayNr, char* str) {
 }
 
 void DoBlink(){
+  if(blinker==false && eom[0]==false && eom[1]==false){
+    blinkTimer.stop();
+  }
   for (byte x=0; x<2; x++) {
     if(eom[x] == true) {
       if(blinker == true){ //pulse display (do not turn off display)
@@ -416,9 +419,6 @@ void DoBlink(){
          disp[x].setBrightness(12);
       }
     }
-  }
-  if(eom[0]==false && eom[1]==false){
-    blinkTimer.stop();
   }
   blinker = !blinker;
 }
